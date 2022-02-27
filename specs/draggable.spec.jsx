@@ -3,11 +3,13 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import TestUtils from 'react-dom/test-utils';
 import ShallowRenderer from 'react-test-renderer/shallow';
-import Draggable, {DraggableCore} from '../lib/Draggable';
 import FrameComponent from 'react-frame-component';
 import assert from 'assert';
 import _ from 'lodash';
+
+import Draggable, {DraggableCore} from '../lib/Draggable';
 import {getPrefix, browserPrefixToKey, browserPrefixToStyle} from '../lib/utils/getPrefix';
+
 const transformStyle = browserPrefixToStyle('transform', getPrefix('transform'));
 const transformKey = browserPrefixToKey('transform', getPrefix('transform'));
 const userSelectStyle = browserPrefixToStyle('user-select', getPrefix('user-select'));
@@ -464,58 +466,72 @@ describe('react-draggable', function () {
 
     it('should be draggable when in an iframe', function (done) {
       let dragged = false;
-      const dragElement = (
-        <Draggable onDrag={function() { dragged = true; }}>
-          <div />
-        </Draggable>
-      );
-      const renderRoot = document.body.appendChild(document.createElement('div'));
-      const frame = ReactDOM.render(<FrameComponent>{ dragElement }</FrameComponent>, renderRoot);
 
-      setTimeout(function checkIframe() {
+      class TestCase extends React.Component {
+        render() {
+          return (
+            <FrameComponent>
+              <Draggable onDrag={function() { dragged = true; }}>
+                <div />
+              </Draggable>
+            </FrameComponent>
+          );
+        }
+      }
+
+      const frame = TestUtils.renderIntoDocument(<TestCase/>);
+      const iframeEl = ReactDOM.findDOMNode(frame);
+
+      document.body.appendChild(iframeEl);
+
+      iframeEl.addEventListener('load', () => {
         const iframeDoc = ReactDOM.findDOMNode(frame).contentDocument;
-        if (!(iframeDoc && iframeDoc.body)) return setTimeout(checkIframe, 50);
         const node = iframeDoc.body.querySelector('.react-draggable');
-        if (!node) return setTimeout(checkIframe, 50);
+
         simulateMovementFromTo(node, 0, 0, 100, 100);
 
         const style = node.getAttribute('style');
         assert(dragged === true);
         assert(style.indexOf('transform: translate(100px, 100px);') >= 0);
 
-        renderRoot.parentNode.removeChild(renderRoot);
         done();
-      }, 0);
+      });
     });
 
-      it('should add and remove transparent selection class to iframe’s body when in an iframe', function (done) {
-        const dragElement = (
-          <Draggable>
-            <div />
-          </Draggable>
-        );
-        const renderRoot = document.body.appendChild(document.createElement('div'));
-        const frame = ReactDOM.render(<FrameComponent>{ dragElement }</FrameComponent>, renderRoot);
+    it('should add and remove transparent selection class to iframe’s body when in an iframe', function (done) {
+      class TestCase extends React.Component {
+        render() {
+          return (
+            <FrameComponent>
+              <Draggable>
+                <div />
+              </Draggable>
+            </FrameComponent>
+          );
+        }
+      }
 
-        setTimeout(function checkIframe() {
-          const iframeDoc = ReactDOM.findDOMNode(frame).contentDocument;
-          if (!iframeDoc) return setTimeout(checkIframe, 50);
-          const node = iframeDoc.querySelector('.react-draggable');
-          if (!node) return setTimeout(checkIframe, 50);
+      const frame = TestUtils.renderIntoDocument(<TestCase/>);
+      const iframeEl = ReactDOM.findDOMNode(frame);
 
-          assert(!document.body.classList.contains('react-draggable-transparent-selection'));
-          assert(!iframeDoc.body.classList.contains('react-draggable-transparent-selection'));
-          TestUtils.Simulate.mouseDown(node, {clientX: 0, clientY: 0});
-          assert(!document.body.classList.contains('react-draggable-transparent-selection'));
-          assert(iframeDoc.body.classList.contains('react-draggable-transparent-selection'));
-          TestUtils.Simulate.mouseUp(node);
-          assert(!document.body.classList.contains('react-draggable-transparent-selection'));
-          assert(!iframeDoc.body.classList.contains('react-draggable-transparent-selection'));
+      document.body.appendChild(iframeEl);
 
-          renderRoot.parentNode.removeChild(renderRoot);
-          done();
-        }, 0);
+      iframeEl.addEventListener('load', () => {
+        const iframeDoc = iframeEl.contentDocument;
+        const node = iframeDoc.querySelector('.react-draggable');
+
+        assert(!document.body.classList.contains('react-draggable-transparent-selection'));
+        assert(!iframeDoc.body.classList.contains('react-draggable-transparent-selection'));
+        TestUtils.Simulate.mouseDown(node, {clientX: 0, clientY: 0});
+        assert(!document.body.classList.contains('react-draggable-transparent-selection'));
+        assert(iframeDoc.body.classList.contains('react-draggable-transparent-selection'));
+        TestUtils.Simulate.mouseUp(node);
+        assert(!document.body.classList.contains('react-draggable-transparent-selection'));
+        assert(!iframeDoc.body.classList.contains('react-draggable-transparent-selection'));
+
+        done();
       });
+    });
   });
 
   describe('interaction', function () {
