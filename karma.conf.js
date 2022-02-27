@@ -1,17 +1,25 @@
 'use strict';
 
 const _ = require('lodash');
+const fs = require('fs');
+const path = require('path');
 const webpack = require('webpack');
+
 process.env.NODE_ENV = 'development';
 process.env.CHROME_BIN = require('puppeteer').executablePath();
+process.env.PUPPETEER_PRODUCT = 'firefox';
+process.env.FIREFOX_BIN = require('puppeteer').executablePath();
+
+// there is an error with firefox path being reported by puppeteer (see: https://github.com/puppeteer/puppeteer/issues/6292)
+// workaround the issue by using first firefox in directory
+const ffdir = path.join(process.env.FIREFOX_BIN, '../../..');
+process.env.FIREFOX_BIN = path.join(ffdir, fs.readdirSync(ffdir)[0], 'firefox/firefox');
 
 module.exports = function(config) {
   const webpackConfig = _.merge(
     require('./webpack.config.js')({}, {}),
     {
       mode: 'development',
-      // Remove source maps: *speeeeeed*
-      devtool: false,
       cache: true,
       performance: {
         hints: false,
@@ -42,7 +50,7 @@ module.exports = function(config) {
     ],
 
     preprocessors: {
-      'specs/draggable.spec.jsx': ['webpack']
+      'specs/draggable.spec.jsx': ['webpack', 'sourcemap']
     },
 
     webpack: webpackConfig,
@@ -64,7 +72,25 @@ module.exports = function(config) {
 
     autoWatch: false,
 
-    browsers: ['Firefox', 'ChromeHeadless'],
+//    browsers: ['FirefoxHeadless', 'ChromeHeadlessNoSandbox'],
+  
+    customLaunchers: {
+      ChromeHeadlessNoSandbox: {
+        base: 'ChromeHeadless',
+        flags: [
+          '--no-sandbox' // required to run without privileges in docker
+        ]
+      },
+      ChromeHeadlessRemoteDebug: {
+        base: 'ChromeHeadlessNoSandbox',
+        flags: [
+          '--user-data-dir=/tmp/chrome-test-profile',
+          '--disable-web-security',
+          '--remote-debugging-port=9222',
+        ],
+        debug: true,
+      }
+    },
 
     singleRun: true,
   });
