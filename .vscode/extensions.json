@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "flowtype.flow-for-vscode",
+        "lucono.karma-test-explorer",
+        "hbenl.vscode-test-explorer",
+        "dbaeumer.vscode-eslint"
+    ]
+}
