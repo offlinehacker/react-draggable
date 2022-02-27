@@ -206,6 +206,11 @@ class App extends React.Component {
             </div>
           </div>
         </Draggable>
+        <Draggable {...dragHandlers} defaultPosition={{x: 50, y: 750}} useTransform={false}>
+          <div className="box">
+            I don't use transform for positioning, rather I have absolute position and use left/top offset.
+          </div>
+        </Draggable>
 
       </div>
     );

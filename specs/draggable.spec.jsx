@@ -256,6 +256,23 @@ describe('react-draggable', function () {
       assert(style.indexOf('transform: translate(100px, 100px);') >= 0);
     });
 
+    it('should render with style left/top for DOM nodes if useTranslate is false', function () {
+      let dragged = false;
+      drag = TestUtils.renderIntoDocument(
+        <Draggable onDrag={function() { dragged = true; }} useTransform={false}>
+          <div />
+        </Draggable>
+      );
+
+      const node = ReactDOM.findDOMNode(drag);
+      simulateMovementFromTo(drag, 0, 0, 100, 100);
+
+      const style = node.getAttribute('style');
+      assert(dragged === true);
+      assert(style.indexOf('left: 100px;') >= 0);
+      assert(style.indexOf('top: 100px;') >= 0);
+    });
+
     it('should render with positionOffset set as string transform and handle subsequent translate() for DOM nodes', function () {
       let dragged = false;
       drag = TestUtils.renderIntoDocument(
